@@ -8,6 +8,7 @@ Francesco Iori
 
 Let's consider 
 $$
+\begin{equation}
 f_{ext} =
 \begin{pmatrix}
 	f_{bx}\\
@@ -19,10 +20,24 @@ f_{ext} =
 	\sin(\theta)\\
 	0
 \end{pmatrix}
+\label{eqn:f_ext}
+\end{equation}
 $$
-If we write the equations for the left finger using the grasp matrix, we have, in the worst case (limit of friction, $f_{y1} = \mu \: f_{x1}$)
+If we write the equations for the left finger, using the inverse of the grasp matrix, we have
 $$
-f_{int} = \max_{\theta} \left[\sin(\theta) - 0.5\,cos(\theta)\right]\simeq 1.118 \\
+\begin{cases}
+f_{x1} = 0.5 f_{bx} + f_{int} \\
+f_{y1} = 0.5 f_{by}
+\end{cases}
+$$
+
+Substituting ($\ref{eqn:f_ext}$) and considering that, to respect the friction constraint, it has to be $\mu \, f_{x1} \geq f_{y1}$, we find
+$$
+f_{int} \geq \sin(\theta) - 0.5 \cos(\theta)
+$$
+ In the worst case we have that the lower for $f_{int}$ is
+$$
+f_{int} \geq \max_{\theta} \left[\sin(\theta) - 0.5\,cos(\theta)\right]\simeq 1.118 \\
 \text{ with }(\theta\simeq 2.034\:rad)
 $$
 thus,
@@ -52,13 +67,13 @@ $$
 Proceeding like in Q1.1, we have, to respect the friction constraint
 $$
 G_{left}\rightarrow\begin{cases}
-f_{int} > \sin(\theta) 				& \theta \in \left[-\frac{\pi}{2}, \frac{\pi}{2}\right]\\
-f_{int} > \sin(\theta)-\cos(\theta) & \theta \in \left[\frac{\pi}{2}, \frac{3}{2}\pi\right]
+f_{int} \geq \sin(\theta) 				& \theta \in \left[-\frac{\pi}{2}, \frac{\pi}{2}\right]\\
+f_{int} \geq \sin(\theta)-\cos(\theta) & \theta \in \left[\frac{\pi}{2}, \frac{3}{2}\pi\right]
 \end{cases}
 $$
-The worst case i respresented by $\theta = \frac{\pi}{2}$, where we have $f_{int} > 1.0$, which represent the minimum to prevent slipping.
+The worst case i respresented by $\theta = \frac{\pi}{2}$, where we have $f_{int} \geq 1.0$, which represent the minimum to prevent slipping.
 
-The maximum value of $f_{x1}$ in this case is $\simeq 1.118$ 
+The value of $f_{x1}$ in this case is $1.0$ 
 
 ### Q2
 

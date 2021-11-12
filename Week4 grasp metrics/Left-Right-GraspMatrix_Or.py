@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 31Oct2021 -cutkosky
 Compare the linear algebra nullspace Grasp matrix
@@ -12,7 +10,7 @@ intermediate results to make sure they make sense to you.
 """
 import numpy as np
 import matplotlib.pyplot as plt
-#from pprint import pprint
+
 """
 Consider a planar block of width = 2 units, held on the left and
 right by two fingers with frictional point contacts. To keep things
@@ -47,17 +45,15 @@ we use the above definition of Gtransp and its inverse to solve for
 the finger forces?
 """
 fext = 1  # You can experiment with different external force magnitudes
-fint = 0.99  # You can experiment with different fint magnitudes
+fint = 1  # You can experiment with different fint magnitudes
 fbody[2] = 0  # External moment (if any)
 fbody[3] = fint
 
 # We need inverse grasp matrix to go from body to finger forces
 Ginv = np.linalg.inv(Gtransp)
-# print("--- Ginv ---")
-# pprint(Ginv)
 
 # Consider a range of directions for the external force
-numsteps = 31415
+numsteps = 314
 thetas = np.linspace(0, 2*np.pi, numsteps)
 plotpts = np.zeros((numsteps, 2))
 markers = ['.'] * numsteps
@@ -98,13 +94,10 @@ be based on min{fx1,-fx2}. Which one is less will depend on the external force.
 # Internal force based only on the left finger
 Gleft = np.array([[1, 0, 1, 0], [0, 1, 0, 1], [0, -1, 0, 1], [1, 0, 0, 0]])
 Gleftinv = np.linalg.inv(Gleft)
-# print("--- Gleftinv ---")
-# pprint(Gleftinv)
 # Internal force based only on the right finger
 Gright = np.array([[1, 0, 1, 0], [0, 1, 0, 1], [0, -1, 0, 1], [0, 0, -1, 0]])
 Grightinv = np.linalg.inv(Gright)
-# print("--- Grightinv ---")
-# pprint(Grightinv)
+
 # reset markers list
 markers = ['.'] * numsteps
 

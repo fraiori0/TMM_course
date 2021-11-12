@@ -2,6 +2,64 @@
 
 Francesco Iori
 
+## Q1
+
+**Q1.1**
+
+Let's consider 
+$$
+f_{ext} =
+\begin{pmatrix}
+	f_{bx}\\
+	f_{by}\\
+	\tau_{bz}
+\end{pmatrix} =
+\begin{pmatrix}
+	\cos(\theta)\\
+	\sin(\theta)\\
+	0
+\end{pmatrix}
+$$
+If we write the equations for the left finger using the grasp matrix, we have, in the worst case (limit of friction, $f_{y1} = \mu \: f_{x1}$)
+$$
+f_{int} = \max_{\theta} \left[\sin(\theta) - 0.5\,cos(\theta)\right]\simeq 1.118 \\
+\text{ with }(\theta\simeq 2.034\:rad)
+$$
+thus,
+$$
+f_{1x} = 0.5\,\cos(\theta) + f_{int} \simeq 0.895
+$$
+
+**Q1.2**
+
+Again, considering the equations resulting from both cases, we have
+$$
+G_{left}\rightarrow
+\theta \in \left[-\frac{\pi}{2}, \frac{\pi}{2}\right]\rightarrow
+\begin{cases}
+f_{x1} = f_{int} \\
+f_{y1} = 0.5 \: f_{yb}
+\end{cases}
+\hskip{0.8cm} |
+\hskip{0.8cm}
+G_{right}\rightarrow
+\theta \in \left[\frac{\pi}{2}, \frac{3}{2}\pi\right]\rightarrow
+\begin{cases}
+f_{x1} = f_{xb} + f_{int} \\
+f_{y1} = 0.5 \: f_{yb}
+\end{cases}
+$$
+Proceeding like in Q1.1, we have, to respect the friction constraint
+$$
+G_{left}\rightarrow\begin{cases}
+f_{int} > \sin(\theta) 				& \theta \in \left[-\frac{\pi}{2}, \frac{\pi}{2}\right]\\
+f_{int} > \sin(\theta)-\cos(\theta) & \theta \in \left[\frac{\pi}{2}, \frac{3}{2}\pi\right]
+\end{cases}
+$$
+The worst case i respresented by $\theta = \frac{\pi}{2}$, where we have $f_{int} > 1.0$, which represent the minimum to prevent slipping.
+
+The maximum value of $f_{x1}$ in this case is $\simeq 1.118$ 
+
 ### Q2
 
 ###### Q 2.1

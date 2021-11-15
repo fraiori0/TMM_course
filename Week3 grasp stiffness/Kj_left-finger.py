@@ -28,77 +28,96 @@ Select and evaluate a few lines at a time, checking intermediate results as
 you go to make sure they make sense.
 """
 
-from sympy import sin, cos, pi, Matrix, Symbol, symbols, simplify, pprint
+from sympy import sin, cos, pi, Matrix, Symbol, symbols, simplify, pprint, latex
+from sys import exit
 
 #################################
 # Define a 6 element wrench and 6 element body twist
-fx,fy,fz,mx,my,mz = symbols('fx,fy,fz,mx,my,mz',real=True)
-dbx,dby,dbz = symbols('dbx,dby,dbz',real=True)
-qbx,qby,qbz = symbols('qbx,qby,qbz',real=True)
-wrench = Matrix([fx,fy,fz,mx,my,mz])
-bodytwist = Matrix([dbx,dby,dbz,qbx,qby,qbz])
+fx, fy, fz, mx, my, mz = symbols('fx,fy,fz,mx,my,mz', real=True)
+dbx, dby, dbz = symbols('dbx,dby,dbz', real=True)
+qbx, qby, qbz = symbols('qbx,qby,qbz', real=True)
+wrench = Matrix([fx, fy, fz, mx, my, mz])
+bodytwist = Matrix([dbx, dby, dbz, qbx, qby, qbz])
 
 
 # We start from the body and work out toward the joints
 ########################################################
-# Jbtran is a 6x6 matrix that, when multipied by a wrench 
-# in a body contact frame, gives the corresponding body wrench. 
-# The contact is assumed to be translated by rx,ry,rz from the body 
+# Jbtran is a 6x6 matrix that, when multipied by a wrench
+# in a body contact frame, gives the corresponding body wrench.
+# The contact is assumed to be translated by rx,ry,rz from the body
 # frame and rotated by thetax,thetay,thetaz (in order).
 # Transpose of Jbtran maps a twist from the body frame to the
 # corresponding contact frame.
 # The general symbolic form is messy (although it looks simple
-# in block form as in Cutkosky thesis Appendix A). However, 
+# in block form as in Cutkosky thesis Appendix A). However,
 # often several of the terms [rx,ry,rz,thetax,thetay,thetaz] will be zero.
-rx, ry, rz = symbols('rx, ry, rz', real = True, positive = True)
-thetax,thetay,thetaz = symbols('thetax,thetay,thetaz', real = True)
+rx, ry, rz = symbols('rx, ry, rz', real=True, positive=True)
+thetax, thetay, thetaz = symbols('thetax,thetay,thetaz', real=True)
 
-Rotx = Matrix([[1,0,0],[0,cos(thetax),-sin(thetax)],[0,sin(thetax),cos(thetax)]])
-Roty = Matrix([[cos(thetay),0,sin(thetay)],[0,1,0],[-sin(thetay),0,cos(thetay)]])
-Rotz = Matrix([[cos(thetaz),-sin(thetaz),0],[sin(thetaz),cos(thetaz),0],[0,0,1]])
+Rotx = Matrix([[1, 0, 0], [0, cos(thetax), -sin(thetax)],
+              [0, sin(thetax), cos(thetax)]])
+Roty = Matrix([[cos(thetay), 0, sin(thetay)], [
+              0, 1, 0], [-sin(thetay), 0, cos(thetay)]])
+Rotz = Matrix([[cos(thetaz), -sin(thetaz), 0],
+              [sin(thetaz), cos(thetaz), 0], [0, 0, 1]])
 Amat = Rotx*Roty*Rotz
 
-Rskew = Matrix([[0,-rz,ry],[rz,0,-rx],[-ry,rx,0]])
+Rskew = Matrix([[0, -rz, ry], [rz, 0, -rx], [-ry, rx, 0]])
 
 top = Amat.row_join(Matrix.zeros(3))
 bottom = (Rskew*Amat).row_join(Amat)
 Jbtran = top.col_join(bottom)
 #########################################################
-#Do some quick tests to check that it looks OK
-#Jtest1 = Jbtran.subs([(thetax,0),(thetay,0),(thetaz,0)]) #only translated
-#Jtest2 = Jbtran.subs([(thetax,0),(thetay,0),(rz,0)])     #planar offset
+# Do some quick tests to check that it looks OK
+# Jtest1 = Jbtran.subs([(thetax,0),(thetay,0),(thetaz,0)]) #only translated
+# Jtest2 = Jbtran.subs([(thetax,0),(thetay,0),(rz,0)])     #planar offset
 
 
 #########################################################
-#Create the H matrix that filters out rotational terms at contacts
+# Create the H matrix that filters out rotational terms at contacts
 # H*twist = twist_transmitted  (linear motion only unless using
 # "soft" fingers). See Appendix I of Cutkosky&Kao
 # Htran*wrench_transmitted = contact wrench  (nonzero forces only)
-Hmat = (Matrix.eye(3)).row_join(Matrix.zeros(3))   #3x6
+Hmat = (Matrix.eye(3)).row_join(Matrix.zeros(3))  # 3x6
 
 
 #########################################################
-#Jacobian for left, right fingers per Appendix II B, Example 2 
-#of Cutkosky&Kao 1989
-link = Symbol('link',real=True,positive=True)    #link length
-Jq1 = Matrix([[0,-link,-link],[link,0,0],[0,link,0],[0,0,0],[0,1,1],[-1,0,0]])
+# Jacobian for left, right fingers per Appendix II B, Example 2
+# of Cutkosky&Kao 1989
+link = Symbol('link', real=True, positive=True)  # link length
+Jq1 = Matrix([[0, -link, -link], [link, 0, 0], [0, link, 0],
+             [0, 0, 0], [0, 1, 1], [-1, 0, 0]])
+Jq2 = Matrix([
+    [0, -link, -link],
+    [link, 0, 0],
+    [0, -link, 0],
+    [0, 0, 0],
+    [0, 1, 1],
+    [1, 0, 0]
+])
 
-#Helps to have a little coord. frame toy when building these
+# Helps to have a little coord. frame toy when building these
 
-#Check if looks OK, using the left finger:
-dq1,dq2,dq3 = symbols('dq1,dq2,dq3',real=True)    #small joint motions
-djoints = Matrix([dq1,dq2,dq3])
+# Check if looks OK, using the left finger:
+dq1, dq2, dq3 = symbols('dq1,dq2,dq3', real=True)  # small joint motions
+djoints = Matrix([dq1, dq2, dq3])
 dfcontact = Jq1*djoints    # total twist motion of the fingertip
 dtrans = Hmat*Jq1*djoints  # 3 element vector of velocities in (l,m,n) frame
 
+dfcontact2 = Jq2*djoints    # total twist motion of the fingertip
+dtrans2 = Hmat*Jq2*djoints  # 3 element vector of velocities in (l,m,n) frame
+
 
 #########################################################
-#Now specialize bpJtran for our object and contact frames.
-#Helps to have a little coord. frame toy when building these:
+# Now specialize bpJtran for our object and contact frames.
+# Helps to have a little coord. frame toy when building these:
 # From (x,y,z) to (l1,m1,n1) we translate -w and rotate -pi/2
 # about y, and then -pi/2 about z.
-w = Symbol('w',real=True,positive=True)
-Jb1t = Jbtran.subs([(rx,-w),(ry,0),(rz,0),(thetax,0),(thetay,-pi/2),(thetaz,-pi/2)]) 
+w = Symbol('w', real=True, positive=True)
+Jb1t = Jbtran.subs([(rx, -w), (ry, 0), (rz, 0), (thetax, 0),
+                   (thetay, -pi/2), (thetaz, -pi/2)])
+Jb2t = Jbtran.subs([(rx, w), (ry, 0), (rz, 0), (thetax, 0),
+                    (thetay, pi/2), (thetaz, pi/2)])
 
 """
 Up to this point everything has been the same as for getting [Kb] the "direct"
@@ -117,57 +136,80 @@ not the transposes but are the blocks that go directly into (42).
 We build deltaJtran by blocks (upper left, upper right, etc):
 """
 
-deltax,deltay,deltaz = symbols('deltax,deltay,deltaz',real=True)
-dqx,dqy,dqz = symbols('dqx,dqy,dqz',real=True)   #small rotations
-#Note that deltax, dqx etc are in the local contact coordinate frame
-deltaA = Matrix([[0,-dqz,dqy],[dqz,0,-dqx],[-dqy,dqx,0]])
-deltaR = Matrix([[0,-deltaz,deltay],[deltaz,0,-deltax],[-deltay,deltax,0]])
+deltax, deltay, deltaz = symbols('deltax,deltay,deltaz', real=True)
+dqx, dqy, dqz = symbols('dqx,dqy,dqz', real=True)  # small rotations
+# Note that deltax, dqx etc are in the local contact coordinate frame
+deltaA = Matrix([[0, -dqz, dqy], [dqz, 0, -dqx], [-dqy, dqx, 0]])
+deltaR = Matrix(
+    [[0, -deltaz, deltay], [deltaz, 0, -deltax], [-deltay, deltax, 0]])
 dJtop = deltaA.row_join(Matrix.zeros(3))
 dJbot = deltaR.row_join(deltaA)
 deltaJtran = dJtop.col_join(dJbot)
-deltaJtran.shape  #should be 6x6
+deltaJtran.shape  # should be 6x6
 
 """
 Make a small motion of the body and find the corresponding
 motions of the fingers
 """
-bctwist1 = Jb1t.T*bodytwist   #contact frames on the body
+bctwist1 = Jb1t.T*bodytwist  # contact frames on the body
+bctwist2 = Jb2t.T*bodytwist  # contact frames on the body
 
-ctwist1 = Hmat*bctwist1       #what gets transmitted through the contact
+ctwist1 = Hmat*bctwist1  # what gets transmitted through the contact
+ctwist2 = Hmat*bctwist2  # what gets transmitted through the contact
 
-Jq1inv = (Hmat*Jq1)**-1 
+Jq1inv = (Hmat*Jq1)**-1
+Jq2inv = (Hmat*Jq2)**-1
 
-djoints1 = Jq1inv * ctwist1    #corresponding joint motions
+djoints1 = Jq1inv * ctwist1  # corresponding joint motions
+djoints2 = Jq2inv * ctwist2  # corresponding joint motions
 
-ftwist1 = Jq1*djoints1         #Work back outward to get the total motion
+ftwist1 = Jq1*djoints1  # Work back outward to get the total motion
+ftwist2 = Jq2*djoints2  # Work back outward to get the total motion
 
-#Simplify a bit by letting 'link' = 1 as in example
-ftwist1 = ftwist1.subs(link,1)
+# Simplify a bit by letting 'link' = 1 as in example
+ftwist1 = ftwist1.subs(link, 1)
+ftwist2 = ftwist2.subs(link, 1)
 
-diff1 = ftwist1-bctwist1      #Relative motion of fingertip to object in (l,m,n) frame
-    
-#Put the elements of diff1 and diff2 into our differential transforms:
-dJtran1p = deltaJtran.subs([(dqx,diff1[3]),(dqy,diff1[4]),(dqz,diff1[5]), (deltax,0),(deltay,0),(deltaz,0)]) 
-#Note: This is where we would change things for rolling (e.g., 'deltax' not zero)
-#Note also that there could be rolling in two orthogonal directions.
+# Relative motion of fingertip to object in (l,m,n) frame
+diff1 = ftwist1-bctwist1
+diff2 = ftwist2-bctwist2
 
-#Now impose our grasp forces (in contact frame)
-fn = Symbol('fn',real=True,positive=True)
-fgrasp = Matrix([0,0,-fn,0,0,0])
+# Put the elements of diff1 and diff2 into our differential transforms:
+dtheta = Symbol('dtheta', real=True)
+R = Symbol('R', real=True)
+dJtran1p = deltaJtran.subs([(dqx, diff1[3]), (dqy, diff1[4]),
+                           (dqz, diff1[5]), (deltax, 0), (deltay, 0), (deltaz, 0)])
+dJtran2p = deltaJtran.subs([(dqx, diff2[3]), (dqy, diff2[4]),
+                           (dqz, diff2[5]), (deltax, 0), (deltay, 0), (deltaz, 0)])
+# dJtran1p = deltaJtran.subs([(dqx, diff1[3]), (dqy, diff1[4]),
+#                            (dqz, diff1[5]), (deltax, 0), (deltay, 0), (deltaz, 0)])
+# dJtran2p = deltaJtran.subs([(dqx, diff2[3]), (dqy, diff2[4]),
+#                            (dqz, diff2[5]), (deltax, 0), (deltay, 0), (deltaz, 0)])
+# Note: This is where we would change things for rolling (e.g., 'deltax' not zero)
+# Note also that there could be rolling in two orthogonal directions.
+
+# Now impose our grasp forces (in contact frame)
+fn = Symbol('fn', real=True, positive=True)
+fgrasp = Matrix([0, 0, -fn, 0, 0, 0])
 
 dfbody1 = -Jb1t*dJtran1p*fgrasp
+dfbody2 = -Jb2t*dJtran2p*fgrasp
 
 print("Change in force on body due to small geometry change [dfbody]")
 pprint(dfbody1)
+pprint(dfbody2)
+
 
 """
 You will add the corresponding terms for the right finger above and then
 get the total change in the body force. Then you can use sympy to take
 the jacobian of dfbody with respect to bodytwist to get [Kj]
 """
-#dfbody = simplify(dfbody1+dfbody2)
-#Kj = dfbody.jacobian(bodytwist)          #Matches Kj in eq (30) Cutkosky&Kao
+print("\n--- dfbody_tot ---")
+dfbody = simplify(dfbody1+dfbody2)
+pprint(dfbody)
 
-
-
-
+print("\n--- Kj ---")
+Kj = simplify(dfbody.jacobian(bodytwist))  # Matches Kj in eq (30) Cutkosky&Kao
+pprint(Kj)
+print(latex(Kj))

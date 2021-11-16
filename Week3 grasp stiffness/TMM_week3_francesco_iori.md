@@ -43,7 +43,7 @@ $$
 
 ### Q2
 
-To consider a soft finger contat model, we modify $H$ to include torque alongthe (local) $z$-axis
+To consider a soft finger contact model, we modify $H$ to include torque along the (local) $z$-axis
 $$
 H = 
 \left[\begin{matrix}1 & 0 & 0 & 0 & 0 & 0\\0 & 1 & 0 & 0 & 0 & 0\\0 & 0 & 1 & 0 & 0 & 0\\0 & 0 & 0 & 0 & 0 & 1\end{matrix}\right]
